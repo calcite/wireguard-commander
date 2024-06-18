@@ -1,0 +1,35 @@
+version: "3"
+
+services:
+  wg01:
+    build:
+      context: wireguard-server/
+    image: wireguard:local
+    container_name: wg01
+    cap_add:
+      - NET_ADMIN
+    network_mode: host
+    environment:
+      SECRET: xyz123
+    ports:
+      - 5123:5123/udp
+      - 8000:8000   # devel
+    logging:
+      driver: json-file
+      options:
+        max-size: 50m
+    volumes:
+      - ./wireguards/wg01:/etc/wireguard
+
+  commander:
+    build:
+      context: wireguard-commander/
+    image: wireguard-commander:local
+    container_name: commander
+    volumes:
+      - ./wireguards:/wireguards
+    environment:
+      COMMANDER_SERVERS_WG01_HOST: http://wg01:8000
+      COMMANDER_SERVERS_WG01_SECRET: xyz123
+    ports:
+      - 8000:8000
