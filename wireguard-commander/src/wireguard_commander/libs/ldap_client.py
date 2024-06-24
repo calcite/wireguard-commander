@@ -58,10 +58,9 @@ class LdapClient(object):
                 )
                 res.append(
                     User(
-                        id=data.sAMAccountName,
-                        name=data.displayName,
-                        mail=data.mail,
-                        dn=member_dn
+                        username=data.sAMAccountName,
+                        display_name=data.displayName,
+                        mail=data.mail
                     )
                 )
         return res
