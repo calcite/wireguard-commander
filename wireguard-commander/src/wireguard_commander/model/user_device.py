@@ -1,19 +1,18 @@
 from datetime import datetime
-
-from attrs import define, field
-
-from model.base import Base
+from pydantic import Field
+from model.base import BaseDbModel
 
 
-@define(kw_only=True)
-class UserDevice(Base):
+class UserDevice(BaseDbModel):
+    __tablename__: str = 'user_device'
 
-    username: str = field()
-    mail: str = field()
-    server_id: int = field()
-    private_key: str = field()
-    public_key: str = field()
-    preshared_key: str = field()
-    created_at: datetime = field()
-    updated_at: datetime = field()
-    enabled: bool = field(default=True)
+    username: str
+    mail: str
+    ip: str
+    server_id: int
+    private_key: str
+    public_key: str
+    preshared_key: str
+    created_at: datetime
+    updated_at: datetime
+    enabled: bool = Field(True)

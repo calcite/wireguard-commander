@@ -1,9 +1,8 @@
-from attrs import define, field
+from pydantic import BaseModel
 
 
-@define(kw_only=True)
-class User(object):
+class User(BaseModel):
 
-    username: str = field()
-    display_name: str = field()
-    mail: str = field()
+    username: str
+    display_name: str
+    mail: str

@@ -6,12 +6,12 @@ authors = [
     {name = "Martin Korbel", email = "mkorbel@alps.cz"},
 ]
 dependencies = [
-    "aiohttp>=3.9.5",
     "ldap3>=2.9.1",
     "onacol>=0.3.3",
     "loggate>=1.10.0",
     "duckdb>=1.0.0",
     "attrs>=23.2.0",
+    "fastapi>=0.111.0",
 ]
 requires-python = "==3.12.*"
 readme = "README.md"

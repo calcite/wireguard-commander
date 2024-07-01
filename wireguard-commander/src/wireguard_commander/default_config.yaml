@@ -11,8 +11,7 @@ ldap:
 
 workers: {}
 
-
-db:
+database:
     path: db.duckdb
 
 logging:
