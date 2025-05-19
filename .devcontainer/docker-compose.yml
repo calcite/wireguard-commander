@@ -34,4 +34,5 @@ networks:
   wg_command:
     driver: bridge
     driver_opts:
+      # Adjust MTU if needed (e.g., connection by WireGuard)
       com.docker.network.driver.mtu: 1420
