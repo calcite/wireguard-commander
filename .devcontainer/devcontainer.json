@@ -18,5 +18,12 @@
 	"mounts": [
 		// Your SSH key for git access
 		"source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind"
-	]
+	],
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"Vue.volar"
+			]
+		}
+	}
 }

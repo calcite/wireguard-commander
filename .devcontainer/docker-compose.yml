@@ -4,10 +4,12 @@ services:
       context: .
       dockerfile: ../frontend/Dockerfile
     ports:
-      - "8080:8080"
+      - "5173:5173"
     volumes:
       - ../frontend:/app
       - /var/run/docker.sock:/var/run/docker.sock
+    extra_hosts:
+      - host.docker.internal:host-gateway
     networks:
       - wg_command
 
@@ -23,6 +25,8 @@ services:
       - ..:/workspace:cached
     networks:
       - wg_command
+    extra_hosts:
+      - host.docker.internal:host-gateway
     depends_on:
       - frontend
 
