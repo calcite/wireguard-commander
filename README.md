@@ -1,2 +1,2 @@
-# wireguard-commander
-Central management system wireguard VPNs.
+# Vue3 + FastAPI
+
