@@ -66,5 +66,4 @@ async def validation_exception_handler(request: Request,
         }),
     )
 
-
 app.mount("/", StaticFiles(directory=FRONTEND_DIR), name="static")

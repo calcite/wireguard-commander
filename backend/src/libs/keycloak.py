@@ -1,10 +1,13 @@
 import jwt
+import urllib3
 from fastapi import Depends
 from fastapi.security import OAuth2AuthorizationCodeBearer
 from config import get_config
 from logging import getLogger
 
 logger = getLogger('keycloak')
+
+urllib3.disable_warnings()
 
 KEYCLOAK_URL = get_config('KEYCLOAK_URL')
 KEYCLOAK_REALM = get_config('KEYCLOAK_REALM')
