@@ -8,13 +8,15 @@ export const useAuthStore = defineStore("storeAuth", {
     return {
       authenticated: false,
       user: {},
+      keycloak: null,
     }
   },
   getters: {},
   actions: {
     // Initialize Keycloak OAuth
     async initOauth(keycloak) {
-      if (!keycloak.authenticated) {
+      this.keycloak = keycloak;
+      if (!this.keycloak.authenticated) {
         this.clearUserData();
         return false;
       }
@@ -26,6 +28,13 @@ export const useAuthStore = defineStore("storeAuth", {
       this.user = response.data
       this.authenticated = true;
       return true;
+    },
+
+    login() {
+      this.keycloak.login();
+    },
+    logout() {
+      this.keycloak.logout();
     },
 
     // Clear user's store data
@@ -40,6 +49,11 @@ export const useAuthStore = defineStore("storeAuth", {
          return this.user.realm_access.includes(role) || this.user.resource_access.includes(role)
        }
        return false
+    },
+    can(perm) {
+      return !!perm && this.user?.permissions && (
+        this.user?.permissions.includes(perm) || this.user?.permissions.includes('admin:all')
+      );
     }
   }
 });

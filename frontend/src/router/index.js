@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import HomeView from '../views/HomeView/View.vue'
 import UsersView from '../views/UsersView.vue'
 
 const permsContain = (text) => (perms) => perms.some(it => it === 'admin:all' || it.includes(text))
@@ -9,14 +9,14 @@ const router = createRouter({
   routes: [
     {
       path: "/",
-      name: "Login",
+      name: "Home",
       component: HomeView,
       meta: {
-        icon: 'mdi-login',
+        icon: 'mdi-view-dashboard',
         menu: true
       }
     }, {
-      path: "/users",
+      path: "/logged-in",
       name: "Users",
       component: UsersView,
       meta: {

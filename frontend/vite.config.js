@@ -12,20 +12,20 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://host.docker.internal:5000/api/',
+        target: 'http://host.docker.internal:5000',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+        // rewrite: (path) => path.replace(/^\/api/, ''),
       },
       '/config': {
-        target: 'http://host.docker.internal:5000/config',
+        target: 'http://host.docker.internal:5000',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/config/, ''),
+        // rewrite: (path) => path.replace(/^\/config/, ''),
       },
       '/ws': {
-        target: 'http://host.docker.internal:5000/ws/',
+        target: 'http://host.docker.internal:5000',
         changeOrigin: true,
         ws: true,
-        rewrite: (path) => path.replace(/^\/ws/, ''),
+        // rewrite: (path) => path.replace(/^\/ws/, ''),
       },
     },
   },

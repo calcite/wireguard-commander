@@ -6,21 +6,24 @@ export default defineComponent({
   props: {
     modelValue: {
       type: Boolean,
-      default: false
+      default: false,
     },
+    title: null,
+    description: null,
+    icon: null
   },
   data() {
     return {}
   },
   computed: {
     currentPageIcon() {
-      return this.$router.currentRoute._value.meta.icon
+      return this.icon ? this.icon : this.$router.currentRoute._value.meta.icon
     },
     currentPageTitle() {
-      return this.$router.currentRoute._value.name
+      return this.title ? this.title : this.$router.currentRoute._value.name
     },
     currentPageDesc() {
-      return this.$router.currentRoute._value.meta.description
+      return this.description ? this.description : this.$router.currentRoute._value.meta.description
     },
     localShowPanel: {
       get() {

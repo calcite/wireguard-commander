@@ -15,7 +15,7 @@ FRONTEND_DIR = get_config('FRONTEND_DIR')
 
 
 keycloak_init()
-app = FastAPI(root_path='/api')
+app = FastAPI()
 
 if not SOCKET_DISABLED:
     socket = Socket(app)
@@ -30,7 +30,7 @@ async def root():
     return FileResponse(f"{FRONTEND_DIR}/index.html")
 
 
-@app.get("/me")
+@app.get("/api/me")
 async def info_about_me(user=Security(get_me)):
     return user
 

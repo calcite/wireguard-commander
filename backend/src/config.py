@@ -10,6 +10,7 @@ DEFAULT_CONFIG = {
     'KEYCLOAK_REALM': 'REALM',
     'KEYCLOAK_ALGORITHM': 'RS256',
     'KEYCLOAK_SECRET_KEY': None,
+    'KEYCLOAK_REALM_ADMIN_ROLE': 'realm-admin',
     'LOGGING_DEFINITIONS': 'logging.yml',
     'LOG_LEVEL': logging.DEBUG,
     'DATABASE_URI': 'postgres://user:password@localhost:5432/db',

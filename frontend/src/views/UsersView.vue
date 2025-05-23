@@ -57,7 +57,7 @@ export default defineComponent({
   methods: {
     async onGridReady(params) {
       // const response = await this.$api.get('/api/users/');
-      this.rowData =  {} //response.data;
+      this.rowData =  [] //response.data;
       this.gridApi = params.api;
     },
     async doSelect(event) {
@@ -88,11 +88,7 @@ export default defineComponent({
   <page v-model="isDetailShown">
 
     <template #panel>
-      <user-form :selected="selected"
-                 @canceled="cancelDone"
-                 @updated="updateDone"
-                 @deleted="deleteDone"
-      />
+
     </template>
 
     <Table

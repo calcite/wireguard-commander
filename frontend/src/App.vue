@@ -1,32 +1,28 @@
 <script>
 import { RouterLink, RouterView } from 'vue-router'
-import {defineComponent, ref} from "vue";
-import { useKeycloak } from '@dsb-norge/vue-keycloak-js'
-import { useAuthStore } from '@/stores/authStore'
+import {defineComponent, ref } from "vue";
+import { useKeycloak }  from '@dsb-norge/vue-keycloak-js'
 
 export default defineComponent({
-  setup() {
-    const authStore = useAuthStore()
-    const keycloak = useKeycloak()
-    return { authStore, keycloak }
-  },
-  props: {},
   data() {
     return {
       app_name: "Application",
-      drawer: true
+      drawer: true,
     }
   },
   computed: {
+
     getMenuItems() {
-      // const auth = this.$authStore
+      const auth = this.$auth
       function check(route) {
         // console.log(typeof route?.meta?.permission)
-        // if (typeof route?.meta?.permission === 'function') {
-        //   return route.meta.permission(auth.profile?.permissions || [])
-        // }
-        // return auth.can(route?.meta?.permission);
-        return true
+        if (route?.meta?.permission === undefined) {
+          return true
+        }
+        if (typeof route?.meta?.permission === 'function') {
+          return route.meta.permission(auth?.user?.permissions || [])
+        }
+        return auth.can(route?.meta?.permission);
       }
       return this.$router.options.routes.filter(route => route.meta?.menu && check(route))
     },
@@ -41,12 +37,22 @@ export default defineComponent({
     },
     navigationDrawerWidthPx() {
       return this.navigationDrawerWidth + 'px';
-    },
-    login() {
-      this.keycloak.keycloak.login()
-    },
-    logout() {
-      this.keycloak.keycloak.logout()
+    }
+  },
+  async beforeMount() {
+    if (!this.$auth.authenticated && this.$router.currentRoute.value.path !== '/') {
+      // Redirect to login page if not authenticated
+      // this.$router.push({path: '/'});
+    }
+  },
+  methods: {
+    async logout() {
+      try {
+        await this.$auth.logout()
+        this.$router.push({path: '/'});
+      } catch (error) {
+        console.error('Logout failed:', error)
+      }
     },
   },
 })
@@ -54,73 +60,75 @@ export default defineComponent({
 
 <template>
   <v-app>
-    <v-app-bar app
-               v-if="$vuetify.display.mobile"
-               class="bg-black"
-               theme="dark"
-               :height="appBarHeight">
-      <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
-      <v-toolbar-title >
-        <img
+    <div v-if="$keycloakReady">
+      <v-app-bar app
+                v-if="$vuetify.display.mobile"
+                class="bg-black"
+                theme="dark"
+                :height="appBarHeight">
+        <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
+        <v-toolbar-title >
+          <img
+              src="/logo.png"
+              width="24"
+              alt="Logo"
+              style="vertical-align: middle; margin-right: 15px"
+          />{{ app_name }}</v-toolbar-title>
+      </v-app-bar>
+
+        <!-- Sidebar navigace -->
+      <v-navigation-drawer
+          class="bg-black"
+          theme="dark"
+          v-model="drawer"
+          :permanent="!$vuetify?.display?.mobile"
+          :width="navigationDrawerWidth"
+      >
+        <v-img
+            v-if="!$vuetify.display.mobile"
             src="/logo.png"
-            width="24"
+            max-width="150"
+            class="mx-auto my-4"
             alt="Logo"
-            style="vertical-align: middle; margin-right: 15px"
-        />{{ app_name }}</v-toolbar-title>
-    </v-app-bar>
-
-      <!-- Sidebar navigace -->
-    <v-navigation-drawer
-        class="bg-black"
-        theme="dark"
-        v-model="drawer"
-        :permanent="!$vuetify?.display?.mobile"
-        :width="navigationDrawerWidth"
-    >
-      <v-img
-          v-if="!$vuetify.display.mobile"
-          src="/logo.png"
-          max-width="150"
-          class="mx-auto my-4"
-          alt="Logo"
-      />
-      <v-list-item :title="app_name" style="text-align: center" ></v-list-item>
-
-      <v-divider theme="dark"></v-divider>
-
-      <v-list nav>
-        <v-list-item
-            v-for="page in getMenuItems"
-            :prepend-icon="page.meta.icon"
-            :title="page.name"
-            :key="page.path"
-            :to="page.path"
-            link
         />
-      </v-list>
+        <v-list-item :title="app_name" style="text-align: center" ></v-list-item>
 
-      <template v-slot:append>
-        <!-- Logout button -->
-        <div class="pa-2" v-if="authStore.authenticated">
+        <v-divider theme="dark"></v-divider>
+
+        <v-list nav>
           <v-list-item
-              :title="authStore.user.name"
-              prepend-icon="mdi-account-box"
-          >
-          </v-list-item>
-          <v-btn prepend-icon="mdi-logout"
-                 block
-                 @click="logout()"
-          >Logout</v-btn>
-        </div>
-      </template>
-    </v-navigation-drawer>
+              v-for="page in getMenuItems"
+              :prepend-icon="page.meta.icon"
+              :title="page.name"
+              :key="page.path"
+              :to="page.path"
+              link
+          />
+        </v-list>
 
-    <!--  Page content -->
-    <v-main class="px-6 py-2 main-content">
-      <router-view />
-    </v-main>
+        <template v-slot:append>
+          <!-- Logout button -->
+          <div class="pa-2" v-if="$auth.authenticated">
+            <v-list-item
+                :title="$auth.user.name"
+                prepend-icon="mdi-account-box"
+            >
+            </v-list-item>
+            <v-btn prepend-icon="mdi-logout"
+                  block
+                  @click="logout()"
+            >Logout</v-btn>
+          </div>
+        </template>
+      </v-navigation-drawer>
 
+      <!--  Page content -->
+      <v-main class="px-6 py-2 main-content">
+        <router-view />
+      </v-main>
+    </div>
   </v-app>
+
 </template>
 
 <style scoped>

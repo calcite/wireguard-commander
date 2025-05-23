@@ -14,6 +14,7 @@ KEYCLOAK_REALM = get_config('KEYCLOAK_REALM')
 KEYCLOAK_CLIENT_ID = get_config('KEYCLOAK_CLIENT_ID')
 KEYCLOAK_ALGORITHM = get_config('KEYCLOAK_ALGORITHM').split(' ')
 KEYCLOAK_SECRET_KEY = get_config('KEYCLOAK_SECRET_KEY')
+WG_COMMAND_ADMIN_ROLE = get_config('KEYCLOAK_REALM_ADMIN_ROLE')
 
 oauth2_scheme = OAuth2AuthorizationCodeBearer(
     tokenUrl=f'{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}'
@@ -58,6 +59,10 @@ async def get_me(token: str = Depends(oauth2_scheme)) -> dict:
         algorithms=KEYCLOAK_ALGORITHM,
         options={"verify_signature": True, "verify_aud": False, "exp": True}
     )
+    res_roles = res.get('resource_access', {}).get(KEYCLOAK_CLIENT_ID, {}).get('roles', [])
+    permitions = []
+    if WG_COMMAND_ADMIN_ROLE in res_roles:
+        permitions.append('admin:all')
     return {
         'name': res.get('name'),
         'email': res.get('email'),
@@ -65,7 +70,6 @@ async def get_me(token: str = Depends(oauth2_scheme)) -> dict:
         'given_name': res.get('given_name'),
         'family_name': res.get('family_name'),
         'realm_access': res.get('realm_access', {}).get('roles', []),
-        'resource_access': res.get('resource_access', {}).get(
-            KEYCLOAK_CLIENT_ID, {}).get('roles', []),
-        'roles': ['admin:all']
+        'resource_access': res_roles,
+        'permissions': permitions
     }

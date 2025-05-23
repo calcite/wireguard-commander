@@ -1,31 +1,26 @@
 <script>
-import { useKeycloak } from '@dsb-norge/vue-keycloak-js'
 import {defineComponent} from "vue";
 import api from "@/services/api";
-import { useAuthStore } from '@/stores/authStore'
 
 
 export default defineComponent({
-  setup() {
-    const keycloak = useKeycloak()
-    const authStore = useAuthStore()
-    return { keycloak, authStore }
-  },
+  name: 'NonAuthenticatedView',
+  emits: ['notify'],
   props: {},
-  data() {
-    return {}
-  },
   methods: {
-    async test() {
-      // this.$socket.emit('test', {payload: 'AAA'})
-      const response = await api.get('/me')
-      console.log(response.data)
-    },
     login() {
-      this.keycloak.keycloak.login()
-    },
-    logout() {
-      this.keycloak.keycloak.logout()
+      try{
+        this.$auth.login()
+      } catch (error) {
+        console.error('Login failed:', error)
+        this.$emit('notify', {
+          text: 'There is a problem with the authentication server.',
+          detail: 'Please try again later.',
+          icon: 'mdi-alert-circle-outline',
+          status: 'warn',
+          timeout: 5000,
+        })
+      }
     },
   }
 })
@@ -58,10 +53,7 @@ export default defineComponent({
             </v-card-item>
           </v-card>
         </v-sheet>
-
-
       </v-sheet>
     </v-card-text>
   </v-card>
 </template>
-
