@@ -1,85 +1,123 @@
-<script setup>
+<script>
 import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+import {defineComponent, ref} from "vue";
+
+export default defineComponent({
+  props: {},
+  data() {
+    return {
+      app_name: "Application",
+      drawer: true
+    }
+  },
+  computed: {
+    getMenuItems() {
+      // const auth = this.$authStore
+      function check(route) {
+        // console.log(typeof route?.meta?.permission)
+        // if (typeof route?.meta?.permission === 'function') {
+        //   return route.meta.permission(auth.profile?.permissions || [])
+        // }
+        // return auth.can(route?.meta?.permission);
+        return true
+      }
+      return this.$router.options.routes.filter(route => route.meta?.menu && check(route))
+    },
+    appBarHeight() {
+      return this.$vuetify.display.mobile ? 64 : 0;
+    },
+    navigationDrawerWidth() {
+      return !this.$vuetify.display.mobile ? 256 : 0;
+    },
+    appBarHeightPx() {
+      return this.appBarHeight + 'px';
+    },
+    navigationDrawerWidthPx() {
+      return this.navigationDrawerWidth + 'px';
+    }
+  },
+})
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
+  <v-app>
+    <v-app-bar app
+               v-if="$vuetify.display.mobile"
+               class="bg-black"
+               theme="dark"
+               :height="appBarHeight">
+      <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
+      <v-toolbar-title >
+        <img
+            src="/logo.png"
+            width="24"
+            alt="Logo"
+            style="vertical-align: middle; margin-right: 15px"
+        />{{ app_name }}</v-toolbar-title>
+    </v-app-bar>
 
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
+      <!-- Sidebar navigace -->
+    <v-navigation-drawer
+        class="bg-black"
+        theme="dark"
+        v-model="drawer"
+        :permanent="!$vuetify?.display?.mobile"
+        :width="navigationDrawerWidth"
+    >
+      <v-img
+          v-if="!$vuetify.display.mobile"
+          src="/logo.png"
+          max-width="150"
+          class="mx-auto my-4"
+          alt="Logo"
+      />
+      <v-list-item :title="app_name" style="text-align: center" ></v-list-item>
 
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
-  </header>
+      <v-divider theme="dark"></v-divider>
 
-  <RouterView />
+      <v-list nav>
+        <v-list-item
+            v-for="page in getMenuItems"
+            :prepend-icon="page.meta.icon"
+            :title="page.name"
+            :key="page.path"
+            :to="page.path"
+            link
+        />
+      </v-list>
+
+      <template v-slot:append>
+        <!-- Logout button -->
+        <!-- <div class="pa-2" v-if="false">
+          <v-list-item
+              :title="$authStore.user.info.name"
+              prepend-icon="mdi-account-box"
+          >
+          </v-list-item>
+          <v-btn prepend-icon="mdi-logout"
+                 block
+                 @click="$authStore.logout()"
+          >Logout</v-btn>
+        </div>-->
+      </template>
+    </v-navigation-drawer>
+
+    <!--  Page content -->
+    <v-main class="px-6 py-2 main-content">
+      <router-view />
+    </v-main>
+
+  </v-app>
 </template>
 
 <style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
-}
-
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
+.main-content {
+  overflow: hidden;
+  position: relative;
+  top: 0; left: 0;
+  width: calc(100vw - v-bind(navigationDrawerWidthPx));
+  height: calc(100vh - v-bind(appBarHeightPx));
+  margin-left: v-bind(navigationDrawerWidthPx);
+  margin-top: v-bind(appBarHeightPx);
 }
 </style>
