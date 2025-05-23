@@ -16,6 +16,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
+      '/config': {
+        target: 'http://host.docker.internal:5000/config',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/config/, ''),
+      },
       '/ws': {
         target: 'http://host.docker.internal:5000/ws/',
         changeOrigin: true,

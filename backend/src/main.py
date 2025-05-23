@@ -12,14 +12,6 @@ from libs.socket import Socket
 
 SOCKET_DISABLED = get_config('SOCKET_DISABLED', wrapper=bool)
 FRONTEND_DIR = get_config('FRONTEND_DIR')
-JS_CONFIGS = {
-    'KEYCLOAK_URL': get_config('KEYCLOAK_URL'),
-    'KEYCLOAK_CLIENT_ID': get_config('KEYCLOAK_CLIENT_ID'),
-    'KEYCLOAK_REALM': get_config('KEYCLOAK_REALM'),
-    'API_URL': get_config('API_URL'),
-    'SOCKET_DISABLED': SOCKET_DISABLED,
-    'SOCKET_RECONNECT': get_config('SOCKET_RECONNECT', 'float')
-}
 
 
 keycloak_init()
@@ -43,16 +35,13 @@ async def info_about_me(user=Security(get_me)):
     return user
 
 
-@app.get("/config.js")
+@app.get("/config")
 async def get_configuration():
-    res = []
-    for it, val in JS_CONFIGS.items():
-        val = json.dumps(val)           # We add quote and escape.
-        res.append(f'const {it}={val};')
-    return PlainTextResponse(
-        content='\n'.join(res),
-        media_type='text/javascript'
-    )
+    return {
+        'url': get_config('KEYCLOAK_URL'),
+        'clientId': get_config('KEYCLOAK_CLIENT_ID'),
+        'realm': get_config('KEYCLOAK_REALM'),
+    }
 
 
 @app.exception_handler(jwt.ExpiredSignatureError)

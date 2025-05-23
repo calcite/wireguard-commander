@@ -1,21 +1,32 @@
 <script>
+import { useKeycloak } from '@dsb-norge/vue-keycloak-js'
 import {defineComponent} from "vue";
+import api from "@/services/api";
+import { useAuthStore } from '@/stores/authStore'
 
 
 export default defineComponent({
-  components: {},
-  data() {
-    return {
-
-    }
+  setup() {
+    const keycloak = useKeycloak()
+    const authStore = useAuthStore()
+    return { keycloak, authStore }
   },
-  async beforeMount() {
-
+  props: {},
+  data() {
+    return {}
   },
   methods: {
-    open(ip) {
-
-    }
+    async test() {
+      // this.$socket.emit('test', {payload: 'AAA'})
+      const response = await api.get('/me')
+      console.log(response.data)
+    },
+    login() {
+      this.keycloak.keycloak.login()
+    },
+    logout() {
+      this.keycloak.keycloak.logout()
+    },
   }
 })
 </script>
@@ -41,7 +52,7 @@ export default defineComponent({
             <v-card-item>
               <v-btn prepend-icon="mdi-login"
                      color="primary"
-                     @click="">
+                     @click="login()">
                 Login
               </v-btn>
             </v-card-item>

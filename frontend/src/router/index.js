@@ -1,34 +1,30 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import UsersView from '../views/UsersView.vue'
 
+const permsContain = (text) => (perms) => perms.some(it => it === 'admin:all' || it.includes(text))
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-    path: "/",
-    name: "Login",
-    component: HomeView,
-    meta: {
-      icon: 'mdi-login',
-      menu: true
+      path: "/",
+      name: "Login",
+      component: HomeView,
+      meta: {
+        icon: 'mdi-login',
+        menu: true
+      }
+    }, {
+      path: "/users",
+      name: "Users",
+      component: UsersView,
+      meta: {
+        permission: 'admin:all',
+        icon: 'mdi-account-outline',
+        menu: true,
+      }
     }
-  },
-  // {
-  //   path: "/vouchers",
-  //   name: "Vouchers",
-  //   component: VouchersView,
-  //   props: (route) => ({
-  //     network_id: route.query?.network_id,
-  //     network_name: route.query?.network_name,
-  //     action: route.query?.action
-  //   }),
-  //   meta: {
-  //     permission: (perms) => perms.some(it => it === 'admin:all' || it.includes('voucher')), //'user:authenticated',
-  //     icon: 'mdi-ticket-outline',
-  //     menu: true,
-  //   }
-  // }
   ],
 })
 

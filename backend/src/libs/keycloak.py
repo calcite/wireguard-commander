@@ -50,7 +50,7 @@ async def get_me(token: str = Depends(oauth2_scheme)) -> dict:
     :return: dict
     :raise ExpiredSignatureError
     """
-    return jwt.decode(
+    res = jwt.decode(
         token,
         f"-----BEGIN PUBLIC KEY-----\n"
         f"{KEYCLOAK_SECRET_KEY}\n"
@@ -58,3 +58,14 @@ async def get_me(token: str = Depends(oauth2_scheme)) -> dict:
         algorithms=KEYCLOAK_ALGORITHM,
         options={"verify_signature": True, "verify_aud": False, "exp": True}
     )
+    return {
+        'name': res.get('name'),
+        'email': res.get('email'),
+        'preferred_username': res.get('preferred_username'),
+        'given_name': res.get('given_name'),
+        'family_name': res.get('family_name'),
+        'realm_access': res.get('realm_access', {}).get('roles', []),
+        'resource_access': res.get('resource_access', {}).get(
+            KEYCLOAK_CLIENT_ID, {}).get('roles', []),
+        'roles': ['admin:all']
+    }

@@ -1,8 +1,15 @@
 <script>
 import { RouterLink, RouterView } from 'vue-router'
 import {defineComponent, ref} from "vue";
+import { useKeycloak } from '@dsb-norge/vue-keycloak-js'
+import { useAuthStore } from '@/stores/authStore'
 
 export default defineComponent({
+  setup() {
+    const authStore = useAuthStore()
+    const keycloak = useKeycloak()
+    return { authStore, keycloak }
+  },
   props: {},
   data() {
     return {
@@ -34,7 +41,13 @@ export default defineComponent({
     },
     navigationDrawerWidthPx() {
       return this.navigationDrawerWidth + 'px';
-    }
+    },
+    login() {
+      this.keycloak.keycloak.login()
+    },
+    logout() {
+      this.keycloak.keycloak.logout()
+    },
   },
 })
 </script>
@@ -88,17 +101,17 @@ export default defineComponent({
 
       <template v-slot:append>
         <!-- Logout button -->
-        <!-- <div class="pa-2" v-if="false">
+        <div class="pa-2" v-if="authStore.authenticated">
           <v-list-item
-              :title="$authStore.user.info.name"
+              :title="authStore.user.name"
               prepend-icon="mdi-account-box"
           >
           </v-list-item>
           <v-btn prepend-icon="mdi-logout"
                  block
-                 @click="$authStore.logout()"
+                 @click="logout()"
           >Logout</v-btn>
-        </div>-->
+        </div>
       </template>
     </v-navigation-drawer>
 
