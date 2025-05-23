@@ -23,7 +23,7 @@ export default defineComponent({
         description="User info.">
 
     <template #panel>
-      Panel
+      <pre>{{ JSON.stringify($auth.user, null, "  ") }}</pre>
     </template>
 
 
