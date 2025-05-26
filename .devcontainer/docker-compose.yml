@@ -10,8 +10,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     extra_hosts:
       - host.docker.internal:host-gateway
-    networks:
-      - wg_command
 
   backend:
     build:
@@ -23,16 +21,33 @@ services:
     command: sleep infinity
     volumes:
       - ..:/workspace:cached
-    networks:
-      - wg_command
     extra_hosts:
       - host.docker.internal:host-gateway
     depends_on:
       - frontend
 
+  db:
+    image: postgres:16
+    environment:
+      # POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: db
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    # ports:
+    #   - 5432:5432
+
+  adminer:
+    image: adminer
+    restart: always
+
 networks:
-  wg_command:
+  default:
     driver: bridge
     driver_opts:
       # Adjust MTU if needed (e.g., connection by WireGuard)
       com.docker.network.driver.mtu: 1420
+
+volumes:
+  db-data:

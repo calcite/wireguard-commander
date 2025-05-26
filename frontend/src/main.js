@@ -29,6 +29,7 @@ app.config.globalProperties.$keycloakReady = ref(false)
 app.use(createPinia())
 app.use(VuetifyPlugin)
 const authStore = useAuthStore()
+
 app.use(VueKeyCloak, {
     init: {
       onLoad: 'check-sso'

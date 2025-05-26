@@ -40,17 +40,23 @@ export default defineComponent({
         <v-sheet class="ma-2 pa-2">
           <v-card
               style="min-width: 300px; min-height: 167px"
-              title="Login"
+              title="Login by KeyCloak"
               subtitle="Login by domain credentials."
               max-width="500"
           >
-            <v-card-item>
-              <v-btn prepend-icon="mdi-login"
-                     color="primary"
-                     @click="login()">
-                Login
-              </v-btn>
+            <v-card-item v-if="$keycloakReady.value">
+                  <v-btn prepend-icon="mdi-login"
+                        color="primary"
+                        @click="login()"
+                        >
+                    Login
+                  </v-btn>
             </v-card-item>
+            <v-card-text v-else>
+              <p>Check Keycloak configuration...</p>
+              <br>
+              <v-progress-circular color="blue-lighten-3" indeterminate></v-progress-circular>
+            </v-card-text>
           </v-card>
         </v-sheet>
       </v-sheet>

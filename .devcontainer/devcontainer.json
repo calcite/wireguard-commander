@@ -12,7 +12,7 @@
 		"ghcr.io/devcontainers/features/python:1": {},
 		"ghcr.io/devcontainers/features/docker-in-docker:1": {}
 	},
-	"postCreateCommand": "cd ./backend && pdm install -G:all",
+	"postCreateCommand": "git config --add devcontainers-theme.show-dirty 1 &&  echo \"alias ll='ls -la'\" >> ~/.bashrc && cd ./backend && pdm install -G:all",
 
 	"mounts": [
 		// Your SSH key for git access
