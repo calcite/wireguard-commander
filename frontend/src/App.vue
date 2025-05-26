@@ -98,8 +98,8 @@ export default defineComponent({
         <v-list nav>
           <v-list-item
               v-for="page in getMenuItems"
-              :prepend-icon="page.meta.icon"
-              :title="page.name"
+              :prepend-icon="typeof page.meta.icon === 'function' ? page.meta.icon() : page.meta.icon"
+              :title="typeof page.name === 'function' ? page.name() : page.name"
               :key="page.path"
               :to="page.path"
               link
