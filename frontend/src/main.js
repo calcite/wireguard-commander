@@ -41,9 +41,9 @@ app.use(VueKeyCloak, {
           console.error('User not authenticated')
           return
         }
-        console.log('User data initialized')
+        console.log('User profile loaded')
       }).catch((error) => {
-        console.error('Error initializing user data:', error)
+        console.error('Error initializing user profile:', error)
       })
       app.config.globalProperties.$keycloakReady.value = true
     },
@@ -58,9 +58,9 @@ app.use(VueKeyCloak, {
     onAuthRefreshSuccess (keycloak) {
       console.log('Token refreshed')
       authStore.initOauth(keycloak).then(() => {
-        console.log('User data initialized')
+        console.log('User profile reloaded')
       }).catch((error) => {
-        console.error('Error initializing user data:', error)
+        console.error('Error reloading user profile:', error)
       })
     },
     onAuthRefreshError (error) {
