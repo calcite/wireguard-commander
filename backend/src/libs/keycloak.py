@@ -1,9 +1,12 @@
+from datetime import datetime
 import jwt
 import urllib3
 from fastapi import Depends
 from fastapi.security import OAuth2AuthorizationCodeBearer
 from config import get_config
 from logging import getLogger
+from libs.db import Pool, db_pool, db_logger
+from models.user import User, UserDB, UserCreate, UserInternalUpdate
 
 logger = getLogger('keycloak')
 
@@ -44,14 +47,11 @@ def keycloak_init():
         KEYCLOAK_SECRET_KEY = download_keycloak_cert()
 
 
-async def get_me(token: str = Depends(oauth2_scheme)) -> dict:
-    """
-    :raise jose.exceptions.ExpiredSignatureError
-    :param token:
-    :return: dict
-    :raise ExpiredSignatureError
-    """
-    res = jwt.decode(
+async def get_me(token: str = Depends(oauth2_scheme),
+                 pool: Pool = Depends(db_pool)) -> User:
+    if not token or token == 'undefined':
+        raise jwt.ExpiredSignatureError()
+    payload = jwt.decode(
         token,
         f"-----BEGIN PUBLIC KEY-----\n"
         f"{KEYCLOAK_SECRET_KEY}\n"
@@ -59,17 +59,22 @@ async def get_me(token: str = Depends(oauth2_scheme)) -> dict:
         algorithms=KEYCLOAK_ALGORITHM,
         options={"verify_signature": True, "verify_aud": False, "exp": True}
     )
-    res_roles = res.get('resource_access', {}).get(KEYCLOAK_CLIENT_ID, {}).get('roles', [])
+    res_roles = payload.get('resource_access', {}).get(KEYCLOAK_CLIENT_ID, {}).get('roles', [])
     permitions = []
     if WG_COMMAND_ADMIN_ROLE in res_roles:
         permitions.append('admin:all')
-    return {
-        'name': res.get('name'),
-        'email': res.get('email'),
-        'preferred_username': res.get('preferred_username'),
-        'given_name': res.get('given_name'),
-        'family_name': res.get('family_name'),
-        'realm_access': res.get('realm_access', {}).get('roles', []),
-        'resource_access': res_roles,
-        'permissions': permitions
-    }
+    async with pool.acquire() as db, db_logger('sql.keycloak', db):
+        async with db.transaction():
+            user = await UserDB.get(db, 'email=$1', payload['email'])
+            if user is None:
+                user_c = UserCreate(
+                    email=payload['email'],
+                    name=payload['name']
+                )
+                user = await UserDB.create(db, user_c)
+        await UserDB.load_assigns(db, user, realm_roles, load_permissions=True)
+        await UserDB.update(db, user, UserInternalUpdate(
+            last_logged_at=datetime.now(),
+            disabled=None
+        ))
+    return user
