@@ -1,5 +1,5 @@
 import asyncio
-from typing import Callable
+from typing import Callable, Optional
 import loggate
 import re
 from asyncpg.connection import Connection
@@ -12,16 +12,17 @@ from asyncpg.connection import LoggedQuery
 
 from config import get_config, to_bool
 
-logger = loggate.getLogger('db')
+logger: loggate.Logger = loggate.getLogger('db')
 
 DATABASE_URI = get_config('DATABASE_URI')
 DATABASE_INIT = get_config('DATABASE_INIT', wrapper=to_bool)
-# MIGRATION_DIR = get_config('MIGRATION_DIR', wrapper=Path)
+MIGRATION_DIR = get_config('MIGRATION_DIR', wrapper=Path)
 INTERFACE_TABLE = get_config('DATABASE_INTERFACE_TABLE_NAME')
 POSTGRES_POOL_MIN_SIZE = get_config('POSTGRES_POOL_MIN_SIZE', wrapper=int)
 POSTGRES_POOL_MAX_SIZE = get_config('POSTGRES_POOL_MAX_SIZE', wrapper=int)
 POSTGRES_CONNECTION_TIMEOUT = get_config('POSTGRES_CONNECTION_TIMEOUT', wrapper=float)
 POSTGRES_CONNECTION_CHECK = get_config('POSTGRES_CONNECTION_CHECK', wrapper=float)
+
 
 class DBPoolAcquireContext(PoolAcquireContext):
 
@@ -62,7 +63,7 @@ class DBConnection:
     singleton = None
 
     @classmethod
-    async def get_pool(cls) -> Pool|None:
+    async def get_pool(cls) -> DBPool | None:
         if not cls.singleton:
             return None
         if not cls.singleton.pool:
@@ -77,63 +78,44 @@ class DBConnection:
     def register_notification(cls, channel: str, fce: Callable):
         cls.notifications[channel] = fce
 
-    @classmethod
-    def db_logger(cls, logger_name: str, db: Connection):
-        #  @Deprecated
-        log = loggate.get_logger(logger_name)
-
-        async def process(query: LoggedQuery):
-            fce = log.error if query.exception else log.debug
-            fce(query.query, meta={
-                'args': query.args,
-                'elapsed': query.elapsed,
-            })
-
-        class Log:
-            async def __aenter__(self):
-                db.add_query_logger(process)
-
-            async def __aexit__(self, *exc):
-                db.remove_query_logger(process)
-        return Log()
-
     def __init__(self) -> None:
         self.end = False
-        self.pool: Pool = None
+        self.pool: Optional[DBPool] = None
         self.checking_task = None
         DBConnection.singleton = self
 
     async def update_db_schema(self):
+        if not self.pool:
+            raise Exception('Before call this method, you have to create a DB pool')
 
-        async with self.pool.acquire() as db:
+        async with self.pool.acquire_with_log(logger) as db:
+            count = -1
             try:
-                schema = 'public'
-                if match := re.search(r'search_path=([^&\?]*)(&?|$)',
-                                      DATABASE_URI, re.I):
-                    schema = match.group(1)
-                count = await db.fetchval(
+                count = int(await db.fetchval(
                     '''
-                        SELECT COUNT(*)
-                        FROM information_schema.tables
-                        WHERE table_schema = $1 AND table_name = $2
+                        SELECT "value"
+                        FROM "public"."config_store"
+                        WHERE key = $1
                     ''',
-                    schema,
-                    INTERFACE_TABLE
-                )
+                    "db_version"
+                ) or -1)
             except UndefinedTableError:
-                count = 0
-            if count > 0:
-                return
-            # migs = list(MIGRATION_DIR.glob('update_*.sql'))
-            # migs.sort()
-            # for file in migs:
-            #     logger.debug('Found db upgrade file %s', file)
-            #     async with db.transaction():
-            #         with open(file, 'r') as f:
-            #             await db.execute(f.read())
-            #     logger.info('Create the database schema')
+                pass
+            migs = list(MIGRATION_DIR.glob('update_*.sql'))
+            migs.sort()
+            for file in migs:
+                f_num = int(file.stem.rsplit('_', 2)[-1])
+                if f_num <= count:
+                    continue
+                logger.debug('Found db upgrade file %s', file)
+                async with db.transaction():
+                    with open(file, 'r') as f:
+                        await db.execute(f.read())
+                logger.info('Create the database schema')
 
     async def listener_handler(self, connection, pid, channel, payload):
+        if not self.pool:
+            raise Exception('Before call this method, you have to create a DB pool')
         try:
             async with self.pool.acquire_with_log(f'{channel}.sql.listener') as db:
                 return await self.notifications[channel](db, channel, payload)
@@ -145,12 +127,11 @@ class DBConnection:
             }, exc_info=True)
 
     async def event_listener(self):
-        db: Connection|None = None
         try:
             while not self.end:
                 try:
                     logger.debug('Listener try to connect.')
-                    db = await connect(
+                    db: Connection = await connect(
                         dsn=DATABASE_URI,
                         timeout=POSTGRES_CONNECTION_TIMEOUT
                     )
@@ -183,7 +164,7 @@ class DBConnection:
             if DATABASE_INIT:
                 await self.update_db_schema()
             if self.startup_callbacks:
-                async with self.pool.acquire() as db:
+                async with self.pool.acquire_with_log(logger) as db:
                     for fce in self.startup_callbacks:
                         await fce(db)
         if self.checking_task:
@@ -244,7 +225,3 @@ class DBConnection:
 
 async def db_pool() -> DBPool:
     return await DBConnection.get_pool()
-
-
-def db_logger(logger_name: str, db: Connection):
-    return DBConnection.db_logger(logger_name, db)

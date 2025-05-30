@@ -3,7 +3,7 @@ permissions:
         device_manage_my:
             name: "Manage own devices"
             desc: |
-                These users can add devices to this network & manage them. 
+                These users can add devices to this network & manage them.
                 They can see only own devices.
         device_read_all:
             name: "See all devices"
@@ -18,7 +18,7 @@ permissions:
             name: "Unlimited registration"
             required: [ device_manage_my, device_manage_all ]
             desc: |
-                If the network has a registration limit per one user. 
+                If the network has a registration limit per one user.
                 This limit is not applied to these users.
         device_edit_ip:
             name: "Edit IP"
@@ -35,7 +35,7 @@ permissions:
             name: "Create vouchers"
             required: [ device_manage_my, device_manage_all ]
             desc: |
-                These users can create vouchers for this network & manage them. 
+                These users can create vouchers for this network & manage them.
                 They see only own vouchers.
         voucher_read_all:
             name: "Read all vouchers"
@@ -52,5 +52,24 @@ permissions:
             name: "Multi-vouchers"
             required: [ voucher_manage_my, voucher_manage_all ]
             desc: |
-                These user can create a voucher for registration 
+                These user can create a voucher for registration
                 more devices (multi-voucher) in this network.
+
+
+static_groups:
+    - name: Admin
+      id: 0
+      description: Application administrators
+      permissions:
+        - admin:all
+      relam_role: APP_ADMIN_ROLE
+      is_assignable: false
+      is_admin: true
+
+    - name: Generic
+      id: -1
+      description: Default user group
+      permissions:
+        - user:authenticated
+      is_assignable: false
+      is_default: true

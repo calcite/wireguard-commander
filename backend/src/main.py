@@ -51,7 +51,9 @@ app.add_middleware(
 
 
 from endpoints.users import router as users_router
+from endpoints.usergroups import router as usersgroups_router
 app.include_router(users_router, prefix="/api/users")
+app.include_router(usersgroups_router, prefix="/api/users-groups")
 
 
 @app.get("/")

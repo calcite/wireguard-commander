@@ -2,7 +2,7 @@ import json
 import asyncpg
 from fastapi import Depends, Query
 from typing import TypeVar, Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from asyncpg import Connection
 
 from models import ConstrainError, ObjectNotFound

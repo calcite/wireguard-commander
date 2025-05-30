@@ -5,7 +5,7 @@ from fastapi import Depends
 from fastapi.security import OAuth2AuthorizationCodeBearer
 from config import get_config
 from logging import getLogger
-from libs.db import Pool, db_pool, db_logger
+from libs.db import DBPool, db_pool
 from models.user import User, UserDB, UserCreate, UserInternalUpdate
 
 logger = getLogger('keycloak')
@@ -17,7 +17,7 @@ KEYCLOAK_REALM = get_config('KEYCLOAK_REALM')
 KEYCLOAK_CLIENT_ID = get_config('KEYCLOAK_CLIENT_ID')
 KEYCLOAK_ALGORITHM = get_config('KEYCLOAK_ALGORITHM').split(' ')
 KEYCLOAK_SECRET_KEY = get_config('KEYCLOAK_SECRET_KEY')
-WG_COMMAND_ADMIN_ROLE = get_config('KEYCLOAK_REALM_ADMIN_ROLE')
+
 
 oauth2_scheme = OAuth2AuthorizationCodeBearer(
     tokenUrl=f'{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}'
@@ -48,7 +48,7 @@ def keycloak_init():
 
 
 async def get_me(token: str = Depends(oauth2_scheme),
-                 pool: Pool = Depends(db_pool)) -> User:
+                 pool: DBPool = Depends(db_pool)) -> User:
     if not token or token == 'undefined':
         raise jwt.ExpiredSignatureError()
     payload = jwt.decode(
@@ -59,11 +59,13 @@ async def get_me(token: str = Depends(oauth2_scheme),
         algorithms=KEYCLOAK_ALGORITHM,
         options={"verify_signature": True, "verify_aud": False, "exp": True}
     )
-    res_roles = payload.get('resource_access', {}).get(KEYCLOAK_CLIENT_ID, {}).get('roles', [])
-    permitions = []
-    if WG_COMMAND_ADMIN_ROLE in res_roles:
-        permitions.append('admin:all')
-    async with pool.acquire() as db, db_logger('sql.keycloak', db):
+    realm_roles = set()
+    for it in payload.get('resource_access', {}).get(KEYCLOAK_CLIENT_ID, {}).get('roles', []):
+        realm_roles.add(it)
+    for it in payload.get('realm_access', {}).get('roles', []):
+        realm_roles.add(it[1:])
+    # print(realm_roles)
+    async with pool.acquire_with_log('sql.keycloak') as db:
         async with db.transaction():
             user = await UserDB.get(db, 'email=$1', payload['email'])
             if user is None:
@@ -73,8 +75,16 @@ async def get_me(token: str = Depends(oauth2_scheme),
                 )
                 user = await UserDB.create(db, user_c)
         await UserDB.load_assigns(db, user, realm_roles, load_permissions=True)
+
+        user_realm_roles = {
+            ug.realm_role for ug in user.member_of_dynamic if ug.realm_role
+        }
+        print(user.member_of_dynamic)
+        realm_roles = realm_roles.intersection(user_realm_roles)
+        print(','.join(realm_roles) if realm_roles else None)
         await UserDB.update(db, user, UserInternalUpdate(
             last_logged_at=datetime.now(),
+            last_realm_roles=','.join(realm_roles) if realm_roles else None,
             disabled=None
         ))
     return user

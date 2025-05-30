@@ -1,6 +1,6 @@
 import os
 import logging
-from typing import Callable
+from typing import Any, Callable
 
 DEFAULT_CONFIG = {
     'API_URL': '/api',
@@ -10,11 +10,12 @@ DEFAULT_CONFIG = {
     'KEYCLOAK_REALM': 'REALM',
     'KEYCLOAK_ALGORITHM': 'RS256',
     'KEYCLOAK_SECRET_KEY': None,
-    'KEYCLOAK_REALM_ADMIN_ROLE': 'realm-admin',
+    'KEYCLOAK_REALM_ADMIN_ROLE': 'APP_ADMIN_ROLE',
     'LOGGING_DEFINITIONS': 'logging.yml',
     'LOG_LEVEL': logging.DEBUG,
     'PERMISSION_DEFINITIONS': 'permissions.yml',
     'DATABASE_URI': 'postgres://user:password@localhost:5432/db',
+    'DATABASE_INIT': 'yes',
     'POSTGRES_POOL_MIN_SIZE': 5,
     'POSTGRES_POOL_MAX_SIZE': 10,
     'POSTGRES_CONNECTION_TIMEOUT': 5,
@@ -30,7 +31,7 @@ DEFAULT_CONFIG = {
 }
 
 
-def get_config(name: str, default=None, wrapper: Callable|None = None):
+def get_config(name: str, default: Any = None, wrapper: Callable | None = None):
     if not wrapper:
         wrapper = lambda x: x   # NOQA
     return wrapper(os.getenv(name, DEFAULT_CONFIG.get(name, default)))
