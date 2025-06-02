@@ -1,24 +1,24 @@
 from datetime import datetime
-from typing import Optional, Set
+from typing import Annotated, Optional, Set
+
+from pydantic import BeforeValidator
 from libs.db import DBConnection, Connection
+from libs.helpers import str2set
 from config import get_config
-from models.base import BaseDBModel, BasePModel, BaseModel, Field, Connection
+from models.base import BaseDBModel, BaseModel, Field, Connection
 
-KEYCLOAK_ADMIN_ROLE = get_config('KEYCLOAK_ADMIN_ROLE')
+KEYCLOAK_REALM_ADMIN_ROLE = get_config('KEYCLOAK_REALM_ADMIN_ROLE')
 
 
-class UserGroupLite(BasePModel):
+class UserGroup(BaseModel):
     id: int
     name: str = Field(max_length=75)
-    permissions: set[str] = Field(default_factory=set)
+    permissions: Annotated[Set[str], BeforeValidator(str2set)] = Field(default_factory=set)
     description: Optional[str] = Field(None, max_length=75)
-
-
-class UserGroup(UserGroupLite):
     realm_role: Optional[str] = Field(None, max_length=75)
     is_default: Optional[bool] = Field(default=False)
     is_assignable: bool = Field(default=True)
-    is_admin: Optional[bool] = Field(default=False)
+    is_readonly: Optional[bool] = Field(default=False)
     created_at: Optional[datetime] = Field(default=None)
 
 
@@ -26,7 +26,8 @@ class UserGroupUpdate(BaseModel):
     name: str = Field( max_length=75)
     description: Optional[str] = Field(None, max_length=75)
     realm_role: Optional[str] = Field(None, max_length=75)
-    # permissions: set[str] = Field(default_factory=set(), exclude=True)
+    permissions: set[str] = Field(default_factory=set,
+                                  json_schema_extra={"no_save": True})
 
 
 class UserGroupCreate(UserGroupUpdate):
@@ -40,34 +41,31 @@ class UserGroupDB(BaseDBModel):
         db_table = 'usergroup'
         PYDANTIC_CLASS = UserGroup
         DEFAULT_SORT_BY: str = 'name'
+        sub_columns = 'JSON_AGG(DISTINCT p.name) as permissions'
+        sub_sql = 'LEFT JOIN "usergroup_permissions" p ON p.usergroup_id = f.id'
+        group_by = ['f.id']
 
-    # @DBConnection.register_startup
-    # @staticmethod
-    # async def init(db: Connection):
-    #     await db.execute(f'''
-    #         INSERT INTO "usergroup" ("name", "description", "realm_role", "is_assignable", "is_admin")
-    #         VALUES ('Admins', 'Application administrators', NULL, false, true)
-    #         ON CONFLICT ("is_admin") DO NOTHING;
-
-    #         INSERT INTO "usergroup" ("name", "description", "is_assignable", "is_default")
-    #         VALUES ('Generic', 'Default user group', false, true)
-    #         ON CONFLICT ("is_default") DO NOTHING;
-    #     ''')
+    @DBConnection.register_startup
+    @staticmethod
+    async def init(db: Connection):
+        await db.execute('UPDATE "usergroup" SET realm_role = $1 WHERE name = $2',
+                         KEYCLOAK_REALM_ADMIN_ROLE, 'Admins')
 
     @classmethod
-    async def load_permissions(cls, db: Connection, usergroups: Set[UserGroup]):
-        pass
-        # ids = {}
-        # for usergroup in usergroups:
-        #     ids[usergroup.id] = usergroup
-        #     if usergroup.is_default:
-        #         usergroup.permissions = {'user:authenticated'}
-        #     if usergroup.is_admin:
-        #         usergroup.permissions = {'admin:all'}
-                # return
-        # rows = await db.fetch(
-        #     'SELECT p.* FROM "usergroup_network_permission" p WHERE p."usergroup_id" = ANY($1::int[])',
-        #     list(ids.keys())
-        # )
-        # for row in rows:
-        #     ids[row['usergroup_id']].permissions.add(f'network:{row["network_id"]}:{row["permission"]}')
+    async def assign_usergroups_to_user(cls, db: Connection, user, usergroups: Set[int]):
+        usergroups = await db.fetch(
+            'SELECT id FROM "usergroup" WHERE id = ANY($1::int[]) AND is_assignable = true',
+            list(usergroups)
+        )
+        ugs = [ug['id'] for ug in usergroups]
+        vals = [(ug, user) for ug in ugs]
+        await db.executemany('''
+            INSERT INTO "usergroup_user" ("usergroup_id", "user_id")
+            VALUES ($1, $2)
+            ON CONFLICT ("usergroup_id", "user_id") DO NOTHING;
+        ''', vals)
+
+        await db.execute('''
+            DELETE FROM "usergroup_user" WHERE "user_id" = $1 AND
+                "usergroup_id" != ALL($2::int[]);
+        ''', user, ugs)

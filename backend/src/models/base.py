@@ -63,12 +63,12 @@ class BaseDBModel:
         return cls(**row)
 
     @classmethod
-    async def get(cls, db: Connection, query: str | int | G, *args, **kwargs
-                  ) -> Optional[G]:
+    async def get(cls, db: Connection, query: str | int | G, *args, **kwargs) -> Optional[G]:
         _cls = kwargs.pop('_cls', cls)
         _raise = kwargs.pop('_raise', False)
         _sub_sql = kwargs.pop('_sub_sql', getattr(_cls.Meta, 'sub_sql', ''))
         _sub_columns = kwargs.pop('_sub_columns', getattr(_cls.Meta, 'sub_columns', ''))
+        group_by = kwargs.pop('_group_by', getattr(_cls.Meta, 'group_by', ''))
         _pydantic_class = kwargs.pop('_pydantic_class', getattr(_cls.Meta, 'PYDANTIC_CLASS', _cls.Meta.PYDANTIC_CLASS))
         _db_table = getattr(_cls.Meta, 'db_view', getattr(_cls.Meta, 'db_table', ''))
         if isinstance(query, _pydantic_class):
@@ -76,9 +76,13 @@ class BaseDBModel:
         if isinstance(query, int) and len(args) == 0:
             args = [query]
             query = 'f."id"=$1'
-
+        if _sub_columns:
+            _sub_columns = f', {_sub_columns}'
+        _post_sql = ' '
+        if group_by:
+            _post_sql += f' GROUP BY {",".join(group_by)}'
         if row := await db.fetchrow(
-            f'SELECT f.* {_sub_columns} FROM "{_db_table}" f {_sub_sql} WHERE {query}',
+            f'SELECT f.* {_sub_columns} FROM "{_db_table}" f {_sub_sql} WHERE {query} {_post_sql}',
             *args
         ):
             return cls.get_object(_pydantic_class, row)
@@ -97,19 +101,24 @@ class BaseDBModel:
         _sub_columns = kwargs.pop('_sub_columns', getattr(_cls.Meta, 'sub_columns', ''))
         _pydantic_class = kwargs.pop('_pydantic_class', getattr(_cls.Meta, 'PYDANTIC_CLASS', object))
         _db_table = getattr(_cls.Meta, 'db_view', getattr(_cls.Meta, 'db_table', ''))
+        group_by = kwargs.pop('_group_by', getattr(_cls.Meta, 'group_by', ''))
         if not sort_by and hasattr(_cls.Meta, 'DEFAULT_SORT_BY'):
             sort_by = getattr(_cls.Meta, 'DEFAULT_SORT_BY')
-        if sort_by:
-            sort_by = f'ORDER BY {sort_by}'
         _post_sql = ' '
         if limit:
             _post_sql += f' LIMIT {limit}'
         if offset:
             _post_sql += f' OFFSET {offset}'
+        if group_by:
+            _post_sql += f' GROUP BY {",".join(group_by)}'
+        if sort_by:
+            _post_sql += f' ORDER BY {sort_by}'
+        if _sub_columns:
+            _sub_columns = f', {_sub_columns}'
 
         rows = await db.fetch(
             f'SELECT f.* {_sub_columns} FROM "{_db_table}" f {_sub_sql} '
-            f'WHERE {query} {sort_by}{_post_sql};',
+            f'WHERE {query} {_post_sql};',
             *args
         )
         return [cls.get_object(_pydantic_class, row) for row in rows]

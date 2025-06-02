@@ -67,21 +67,14 @@ async def get_me(token: str = Depends(oauth2_scheme),
     # print(realm_roles)
     async with pool.acquire_with_log('sql.keycloak') as db:
         async with db.transaction():
-            user = await UserDB.get(db, 'email=$1', payload['email'])
+            user = await UserDB.get_identity(db, 'email=$2', payload['email'], realm_roles=realm_roles)
             if user is None:
                 user_c = UserCreate(
                     email=payload['email'],
                     name=payload['name']
                 )
-                user = await UserDB.create(db, user_c)
-        await UserDB.load_assigns(db, user, realm_roles, load_permissions=True)
-
-        user_realm_roles = {
-            ug.realm_role for ug in user.member_of_dynamic if ug.realm_role
-        }
-        print(user.member_of_dynamic)
-        realm_roles = realm_roles.intersection(user_realm_roles)
-        print(','.join(realm_roles) if realm_roles else None)
+                await UserDB.create(db, user_c)
+                user = await UserDB.get_identity(db, 'email=$2', payload['email'], realm_roles=realm_roles)
         await UserDB.update(db, user, UserInternalUpdate(
             last_logged_at=datetime.now(),
             last_realm_roles=','.join(realm_roles) if realm_roles else None,

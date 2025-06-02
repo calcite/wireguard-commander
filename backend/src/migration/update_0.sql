@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS "public"."user" (
     "created_at" timestamptz DEFAULT CURRENT_TIMESTAMP NOT NULL,
     "role" character varying(50),
     "last_logged_at" timestamptz,
-    "last_realm_roles" character varying(64),
+    "last_realm_roles" text,
     "disabled" boolean,
     CONSTRAINT "user_email_key" UNIQUE ("email"),
     CONSTRAINT "user_pkey" PRIMARY KEY ("id")
@@ -27,12 +27,18 @@ CREATE TABLE IF NOT EXISTS "public"."usergroup" (
     "realm_role" character varying(75),
     "created_at" timestamptz DEFAULT CURRENT_TIMESTAMP NOT NULL,
     "is_assignable" boolean DEFAULT true NOT NULL,
-    "is_admin" boolean,
-    CONSTRAINT "usergroup_is_admin" UNIQUE ("is_admin"),
+    "is_readonly" boolean,
     CONSTRAINT "usergroup_is_default" UNIQUE ("is_default"),
     CONSTRAINT "usergroup_name" UNIQUE ("name"),
     CONSTRAINT "usergroup_pkey" PRIMARY KEY ("id")
 ) WITH (oids = false);
+
+INSERT INTO "usergroup" ("name", "description", "realm_role", "is_assignable", "is_readonly")
+VALUES
+('Admins', 'Application administrators', NULL, false, true),
+('Generic', 'Default user group', NULL, false, true)
+ON CONFLICT ("is_admin") DO NOTHING;
+
 
 CREATE INDEX IF NOT EXISTS "usergroup_realm_role" ON "public"."usergroup" USING btree ("realm_role");
 
@@ -45,6 +51,23 @@ CREATE TABLE IF NOT EXISTS "public"."usergroup_user" (
     CONSTRAINT "usergroup_user_user_id_fkey" FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE NOT DEFERRABLE,
     CONSTRAINT "usergroup_user_usergroup_id_fkey" FOREIGN KEY (usergroup_id) REFERENCES usergroup(id) ON DELETE CASCADE NOT DEFERRABLE
 ) WITH (oids = false);
+
+CREATE TABLE "usergroup_permissions" (
+  "name" character varying(64) NOT NULL,
+  "usergroup_id" integer NOT NULL,
+  "read_only" boolean NOT NULL DEFAULT false,
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  ADD CONSTRAINT "usergroup_permissions_usergroup_id_name" PRIMARY KEY ("usergroup_id", "name"),
+  ADD FOREIGN KEY ("usergroup_id") REFERENCES "usergroup" ("id") ON DELETE CASCADE
+);
+
+INSERT INTO "public". "usergroup_permissions" ("name", "usergroup_id", "read_only")
+VALUES
+('admin:all', (SELECT "id" FROM "public"."usergroup" WHERE "name" = 'Admins' LIMIT 1), true),
+('user:authenticated', (SELECT "id" FROM "public"."usergroup" WHERE "name" = 'Generic' LIMIT 1), true)
+ON CONFLICT ("name", "usergroup_id") DO NOTHING;
+
 
 CREATE TABLE IF NOT EXISTS "public". "config_store" (
     "key" TEXT PRIMARY KEY,
