@@ -5,7 +5,8 @@ import { checkRightToRoute } from './helpers';
 export default defineComponent({
   data() {
     return {
-      app_name: "Application",
+      app_name: "WIREGUARD",
+      app_sub: "Management System",
       drawer: true,
     }
   },
@@ -50,16 +51,19 @@ export default defineComponent({
         <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
         <v-toolbar-title >
           <img
-              src="/logo.png"
+              src="/logo2.png"
               width="24"
               alt="Logo"
               style="vertical-align: middle; margin-right: 15px"
-          />{{ app_name }}</v-toolbar-title>
+          />
+          <span>{{ app_name }} - {{ app_sub }}</span>
+
+        </v-toolbar-title>
       </v-app-bar>
 
         <!-- Sidebar navigace -->
       <v-navigation-drawer
-          class="bg-black"
+          class="bg-blue-grey-1"
           theme="dark"
           v-model="drawer"
           :permanent="!$vuetify?.display?.mobile"
@@ -67,12 +71,16 @@ export default defineComponent({
       >
         <v-img
             v-if="!$vuetify.display.mobile"
-            src="/logo.png"
+            src="/logo2.png"
             max-width="150"
             class="mx-auto my-4"
             alt="Logo"
         />
-        <v-list-item :title="app_name" style="text-align: center" ></v-list-item>
+        <v-list-item style="text-align: center" v-if="!$vuetify.display.mobile">
+          <v-list-item-title class="text-h5">{{ app_name }}</v-list-item-title>
+          <v-list-item-subtitle class="text-subtitle-1">{{ app_sub }}</v-list-item-subtitle>
+          <br>
+        </v-list-item>
 
         <v-divider theme="dark"></v-divider>
 
