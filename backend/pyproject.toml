@@ -13,3 +13,4 @@ license = {text = "MIT"}
 
 [tool.pdm]
 distribution = false
+python.use_venv = true

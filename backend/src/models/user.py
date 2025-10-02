@@ -1,10 +1,10 @@
 
 from loggate import get_logger
-from pydantic import BeforeValidator, Field, field_validator
+from pydantic import BeforeValidator, Field
 from datetime import datetime
 from typing import Annotated, Optional, Set
 
-from models.usergroup import UserGroup, UserGroupDB
+from models.usergroup import UserGroupDB
 from models import Forbidden, ObjectNotFound
 from config import get_config
 from libs.helpers import str2set
@@ -96,7 +96,7 @@ class UserDB(BaseDBModel):
             return res
         else:
             raise ObjectNotFound(
-                f'Object {cls.__name__} not found: {query} ({args}).'
+                f'Object {cls.__name__} not found: {query} {args}.'
             )
 
     @classmethod

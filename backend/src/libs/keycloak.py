@@ -1,4 +1,5 @@
 from datetime import datetime
+from models import ObjectNotFound
 import jwt
 import urllib3
 from fastapi import Depends
@@ -67,7 +68,10 @@ async def get_me(token: str = Depends(oauth2_scheme),
     print(realm_roles)
     async with pool.acquire_with_log('sql.keycloak') as db:
         async with db.transaction():
-            user = await UserDB.get_identity(db, 'email=$2', payload['email'], realm_roles=realm_roles)
+            try:
+                user = await UserDB.get_identity(db, 'email=$2', payload['email'], realm_roles=realm_roles)
+            except ObjectNotFound as e:
+                user = None
             if user is None:
                 user_c = UserCreate(
                     email=payload['email'],

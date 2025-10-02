@@ -36,8 +36,7 @@ CREATE TABLE IF NOT EXISTS "public"."usergroup" (
 INSERT INTO "usergroup" ("name", "description", "realm_role", "is_assignable", "is_readonly")
 VALUES
 ('Admins', 'Application administrators', NULL, false, true),
-('Generic', 'Default user group', NULL, false, true)
-ON CONFLICT ("is_admin") DO NOTHING;
+('Generic', 'Default user group', NULL, false, true);
 
 
 CREATE INDEX IF NOT EXISTS "usergroup_realm_role" ON "public"."usergroup" USING btree ("realm_role");
@@ -58,8 +57,8 @@ CREATE TABLE "usergroup_permissions" (
   "read_only" boolean NOT NULL DEFAULT false,
   "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
   "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-  ADD CONSTRAINT "usergroup_permissions_usergroup_id_name" PRIMARY KEY ("usergroup_id", "name"),
-  ADD FOREIGN KEY ("usergroup_id") REFERENCES "usergroup" ("id") ON DELETE CASCADE
+  PRIMARY KEY ("usergroup_id", "name"),
+  FOREIGN KEY ("usergroup_id") REFERENCES "usergroup" ("id") ON DELETE CASCADE
 );
 
 INSERT INTO "public". "usergroup_permissions" ("name", "usergroup_id", "read_only")
@@ -79,6 +78,6 @@ CREATE TABLE IF NOT EXISTS "public". "config_store" (
 
 INSERT INTO "public". "config_store" (key, value)
 VALUES ('db_version', '0')
-ON CONFLICT ("key") DO UPDATE
 SET "value" = EXCLUDED.value,
     "updated_at" = CURRENT_TIMESTAMP;
+ON CONFLICT ("key") DO UPDATE
