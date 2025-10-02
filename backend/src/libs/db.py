@@ -15,6 +15,7 @@ from config import get_config, to_bool
 logger: loggate.Logger = loggate.getLogger('db')
 
 DATABASE_URI = get_config('DATABASE_URI')
+DATABASE_WIREGUARD_SCHEMA = get_config('DATABASE_WIREGUARD_SCHEMA')
 DATABASE_INIT = get_config('DATABASE_INIT', wrapper=to_bool)
 MIGRATION_DIR = get_config('MIGRATION_DIR', wrapper=Path)
 INTERFACE_TABLE = get_config('DATABASE_INTERFACE_TABLE_NAME')
@@ -22,6 +23,21 @@ POSTGRES_POOL_MIN_SIZE = get_config('POSTGRES_POOL_MIN_SIZE', wrapper=int)
 POSTGRES_POOL_MAX_SIZE = get_config('POSTGRES_POOL_MAX_SIZE', wrapper=int)
 POSTGRES_CONNECTION_TIMEOUT = get_config('POSTGRES_CONNECTION_TIMEOUT', wrapper=float)
 POSTGRES_CONNECTION_CHECK = get_config('POSTGRES_CONNECTION_CHECK', wrapper=float)
+
+
+
+class UseDBSchema:
+    def __init__(self, db, name):
+        self.db = db
+        self.name = name
+        self.original = None
+
+    async def __aenter__(self):
+        self.original = await self.db.fetchval("SHOW search_path")
+        await self.db.execute(f'SET search_path TO {self.name}')
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        return await self.db.execute(f'SET search_path TO {self.original}')
 
 
 class DBPoolAcquireContext(PoolAcquireContext):
@@ -83,6 +99,23 @@ class DBConnection:
         self.pool: Optional[DBPool] = None
         self.checking_task = None
         DBConnection.singleton = self
+
+    async def update_wireguard_schema(self):
+        if not self.pool:
+            raise Exception('Before call this method, you have to create a DB pool')
+
+        async with self.pool.acquire_with_log(logger) as db:
+            exists = await db.fetchval(
+                "SELECT EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = $1)",
+                DATABASE_WIREGUARD_SCHEMA
+            )
+            if not exists:
+                async with db.transaction():
+                        await db.execute(f"CREATE SCHEMA {DATABASE_WIREGUARD_SCHEMA}")
+                        async with UseDBSchema(db, DATABASE_WIREGUARD_SCHEMA):
+                            with open(f'{MIGRATION_DIR}/wireguard_pg_init.sql', 'r') as f:
+                                await db.execute(f.read())
+                logger.info('Wireguard database schema updated')
 
     async def update_db_schema(self):
         if not self.pool:
@@ -162,6 +195,7 @@ class DBConnection:
         await self.start_pool()
         if self.pool:
             if DATABASE_INIT:
+                await self.update_wireguard_schema()
                 await self.update_db_schema()
             if self.startup_callbacks:
                 async with self.pool.acquire_with_log(logger) as db:

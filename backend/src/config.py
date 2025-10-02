@@ -15,6 +15,7 @@ DEFAULT_CONFIG = {
     'LOG_LEVEL': logging.DEBUG,
     'PERMISSION_DEFINITIONS': 'permissions.yml',
     'DATABASE_URI': 'postgres://user:password@localhost:5432/db',
+    'DATABASE_WIREGUARD_SCHEMA': 'wireguard2',
     'DATABASE_INIT': 'yes',
     'POSTGRES_POOL_MIN_SIZE': 5,
     'POSTGRES_POOL_MAX_SIZE': 10,
