@@ -65,7 +65,7 @@ async def get_me(token: str = Depends(oauth2_scheme),
         realm_roles.add(it)
     for it in payload.get('realm_access', {}).get('roles', []):
         realm_roles.add(it[1:])
-    print(realm_roles)
+    # print(realm_roles)
     async with pool.acquire_with_log('sql.keycloak') as db:
         async with db.transaction():
             try:
