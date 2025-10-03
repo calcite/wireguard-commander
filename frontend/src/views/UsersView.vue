@@ -53,11 +53,6 @@ export default defineComponent({
           valueGetter: (params) => {
             return this.userGroups.filter(g => params.data.member_of_static_ids?.includes(g.id) || params.data.member_of_dynamic_ids?.includes(g.id)) || [];
           },
-          cellRendererParams: {
-            getChips: (params) => {
-              return params.data.member_of_names || [];
-            }
-          }
         }
       ],
     }
@@ -94,12 +89,12 @@ export default defineComponent({
       this.selected = null;
     },
     updateDone(item) {
-      this.gridApi.refreshCells({rowNodes: [this.selectedEvent.node]})
+      this.gridApi.refreshCells({rowNodes: [this.selectedEvent.node], force: true})
       this.selected = null;
     },
     deleteDone(item) {
       this.rowData.splice(this.selectedEvent.rowIndex, 1)
-      this.gridApi.refreshCells({rowNodes: [this.selectedEvent.node]})
+      this.gridApi.refreshCells({rowNodes: [this.selectedEvent.node], force: true})
       this.selected = null;
     }
   }
