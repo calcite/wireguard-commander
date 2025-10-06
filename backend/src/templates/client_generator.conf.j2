@@ -1,0 +1,59 @@
+[Interface]
+PrivateKey = {{ interface.private_key }}
+{% for line in interface.address.splitlines() -%}
+Address = {{ line }}
+{% endfor -%}
+{% if interface.dns -%}
+{% for line in interface.dns.splitlines() -%}
+Dns = {{ line }}
+{% endfor -%}
+{% endif -%}
+{% if interface.fw_mark -%}
+FwMark = {{ interface.fw_mark }}
+{% endif -%}
+{% if interface.mtu -%}
+MTU = {{ interface.mtu }}
+{% endif -%}
+{% if interface.table -%}
+Table = {{ interface.table }}
+{% endif -%}
+{% if interface.pre_up -%}
+{% for line in interface.pre_up.splitlines() -%}
+PreUp = {{ line }}
+{% endfor -%}
+{% endif -%}
+{% if interface.post_up -%}
+{% for line in interface.post_up.splitlines() -%}
+PostUp = {{ line }}
+{% endfor -%}
+{% endif -%}
+{% if interface.pre_down -%}
+{% for line in interface.pre_down.splitlines() -%}
+PreDown = {{ line }}
+{% endfor -%}
+{% endif -%}
+{% if interface.post_down -%}
+{% for line in interface.post_down.splitlines() -%}
+PostDown = {{ line }}
+{% endfor -%}
+{% endif -%}
+
+{% for peer in peers %}
+[Peer]
+PublicKey = {{ peer.public_key }}
+Endpoint = {{ peer.endpoint }}
+{% if not peer.allowed_ip -%}
+AllowedIPs = {{ interface.address | ip }}/32
+{% else -%}
+{% for line in peer.allowed_ip.splitlines() -%}
+AllowedIPs = {{ line }}
+{% endfor -%}
+{% endif -%}
+{% if peer.preshared_key -%}
+PresharedKey = {{ peer.preshared_key }}
+{% endif -%}
+{% if peer.persistent_keepalive -%}
+PersistentKeepalive = {{ peer.persistent_keepalive }}
+{% endif -%}
+
+{% endfor %}

@@ -6,6 +6,7 @@ import HomeView from '../views/HomeView/View.vue'
 import UserGroupsView from '../views/UserGroupsView.vue'
 import UsersView from '../views/UsersView.vue'
 import NotFound from '../views/NotFound.vue'
+import NetworksView from '../views/NetworksView.vue'
 
 
 const permsContain = (text) => (perms) => perms.some(it => it === 'admin:all' || it.includes(text))
@@ -21,6 +22,16 @@ const router = createRouter({
       component: HomeView,
       meta: {
         icon: () => keycloak.authenticated ? 'mdi-view-dashboard' : 'mdi-login',
+        menu: true,
+      }
+    },
+    {
+      path: "/network",
+      name: "Networks",
+      component: NetworksView,
+      meta: {
+        permission: 'admin:all',
+        icon: 'mdi-server-network',
         menu: true,
       }
     },

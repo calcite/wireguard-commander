@@ -10,7 +10,11 @@ export default defineComponent({
     },
     title: null,
     description: null,
-    icon: null
+    icon: null,
+    detailPanelWidth: {
+      type: String,
+      default: '20vw',
+    }
   },
   data() {
     return {}
@@ -66,6 +70,7 @@ export default defineComponent({
 
 <style scoped>
 .v-navigation-drawer--active {
-  min-width: 20vw;
+  min-width: v-bind('detailPanelWidth');
+  min-height: 100vh;
 }
 </style>

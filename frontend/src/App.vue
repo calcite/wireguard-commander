@@ -113,7 +113,7 @@ export default defineComponent({
 
       <!--  Page content -->
       <v-main class="px-6 py-2 main-content">
-        <router-view />
+        <router-view :navigationDrawerWidthPx="navigationDrawerWidthPx" />
       </v-main>
     </div>
   </v-app>

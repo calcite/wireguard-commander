@@ -3,7 +3,7 @@ import asyncpg
 from fastapi import Depends, Query
 from typing import TypeVar, Optional, List
 from pydantic import BaseModel, Field
-from asyncpg import Connection
+from asyncpg import Connection, Record
 
 from models import ConstrainError, ObjectNotFound
 from libs.db import DBConnection
@@ -42,7 +42,7 @@ class BaseDBModel:
     class Meta:
         db_table = 'unknow'
         sql_subquery = ''
-        PYDANTIC_CLASS = BasePModel
+        PYDANTIC_CLASS: G = BasePModel
         DEFAULT_SORT_BY: str = 'id'
         reload_after_create: bool = False
 
@@ -57,10 +57,9 @@ class BaseDBModel:
             DBConnection.register_startup(handler)
 
     @staticmethod
-    def get_object(cls, row):
-        # for key, val in row.items():
-        #     if cls.model_fields[key]
-        return cls(**row)
+    def get_object(cls, row: Record):
+        # We need to remove duplicate couloms from record (e.g. id from two tables)
+        return cls(**dict(row.items()))
 
     @classmethod
     async def get(cls, db: Connection, query: str | int | G, *args, **kwargs) -> Optional[G]:
@@ -131,8 +130,9 @@ class BaseDBModel:
     async def update(cls, db: Connection, obj: str | int | G, update: U, *args, **kwargs) -> G:
         _cls = kwargs.pop('_cls', cls)
         obj = await _cls.get(db, obj, *args, _raise=True)
-        if hasattr(_cls, 'pre_update'):
-            await _cls.pre_update(db, obj, update, **kwargs)
+        org_update = update
+        if hasattr(_cls, 'pre_update') and (pre := await _cls.pre_update(db, obj, update, **kwargs)):
+            update = pre
         columns, values = ([], [])
         fields = update.__class__.model_fields
         fields.update(update.__class__.model_computed_fields)
@@ -150,14 +150,15 @@ class BaseDBModel:
         if not values:
             return obj
         try:
-            await db.execute(
-                f'UPDATE "{_cls.Meta.db_table}" SET {",".join(columns)} WHERE id = {obj.id}',
-                *values
-            )
+            if not kwargs.get('_drain'):
+                await db.execute(
+                    f'UPDATE "{_cls.Meta.db_table}" SET {",".join(columns)} WHERE id = {obj.id}',
+                    *values
+                )
         except asyncpg.exceptions.IntegrityConstraintViolationError as e:
             raise ConstrainError(str(e))
-        if hasattr(_cls, 'post_update'):
-            await _cls.post_update(db, obj, **kwargs)
+        if hasattr(_cls, 'post_update') and (post := await _cls.post_update(db, obj, org_update, **kwargs)):
+            obj = post
         return obj
 
     @classmethod
@@ -165,8 +166,9 @@ class BaseDBModel:
         _cls = kwargs.pop('_cls', cls)
         _reload_after_create = kwargs.pop('_reload_after_create',
                                           getattr(_cls.Meta, 'reload_after_create', False))
-        if hasattr(_cls, 'pre_create'):
-            await _cls.pre_create(db, create, **kwargs)
+        org_create = create
+        if hasattr(_cls, 'pre_create') and (pre := await _cls.pre_create(db, create, **kwargs)):
+            create = pre
         columns, values, indexes = ([], [], [])
         fields = create.__class__.model_fields
         fields.update(create.__class__.model_computed_fields)
@@ -181,22 +183,28 @@ class BaseDBModel:
                     values.append(val)
                 indexes.append(f'${len(values)}')
         try:
-            row = await db.fetchrow(
-                f'INSERT INTO "{_cls.Meta.db_table}"  ({",".join(columns)}) '
-                f'VALUES ({",".join(indexes)}) RETURNING *;',
-                *values
-            )
-            data = dict(**row)
-            if hasattr(_cls, 'post_sql_create'):
-                await _cls.post_sql_create(db, data, create, **kwargs)
+            if not kwargs.get('_drain'):
+                row = await db.fetchrow(
+                    f'INSERT INTO "{_cls.Meta.db_table}"  ({",".join(columns)}) '
+                    f'VALUES ({",".join(indexes)}) RETURNING *;',
+                    *values
+                )
+            else:
+                keys = [key for key, meta in fields.items() if not ext.get('no_save', False)]
+                row = dict(zip(keys, values))
+                row['id'] = 0
         except asyncpg.exceptions.IntegrityConstraintViolationError as e:
             raise ConstrainError(str(e))
-        if not _reload_after_create:
+        data = dict(**row)
+        if hasattr(_cls, 'post_sql_create'):
+            await _cls.post_sql_create(db, data, create, **kwargs)
+
+        if hasattr(_cls, 'post_create') and (post := await _cls.post_create(db, data, org_create, **kwargs)):
+            obj = post
+        elif not _reload_after_create:
             obj = _cls.Meta.PYDANTIC_CLASS(**data)
         else:
             obj = await _cls.get(db, data['id'])
-        if hasattr(_cls, 'post_create'):
-            await _cls.post_create(db, obj, create, **kwargs)
         return obj
 
     @classmethod
@@ -216,10 +224,10 @@ class BaseDBModel:
             await _cls.post_delete(db, obj, **kwargs)
 
     @classmethod
-    def convert_object(cls, obj, toClass) -> BaseModel:
-        params = {}
-        for k, m in toClass.model_fields.items():
-            params[k] = getattr(obj, k, m.default)
+    def convert_object(cls, obj, toClass, **kwargs) -> BaseModel:
+        # We need to remove duplicate couloms from record (e.g. id from two tables)
+        params = dict(**obj.model_dump()) if isinstance(obj, BaseModel) else obj
+        params.update(kwargs)
         return toClass(**params)
 
     @classmethod
