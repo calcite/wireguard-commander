@@ -69,6 +69,8 @@ export default defineComponent({
 
         <v-text-field
             v-model="selected.name"
+            density="compact"
+            variant="outlined"
             label="Name"
             :rules="[v => !!v || 'Name is required']"
             :counter="$apiStore.getMaxLength('UserUpdate', 'name')"
@@ -78,6 +80,8 @@ export default defineComponent({
         <v-text-field
             v-model="selected.email"
             prepend-icon="mdi-email-seal-outline"
+            density="compact"
+            variant="outlined"
             label="Email"
             :rules="[v => !!v || 'E-mail is required', v => /.+@.+\..+/.test(v) || 'E-mail must be valid']"
             :counter="$apiStore.getMaxLength('UserUpdate', 'email')"
@@ -86,6 +90,8 @@ export default defineComponent({
 
         <v-select
             v-model="selected.member_of_static_ids"
+            density="compact"
+            variant="outlined"
             prepend-icon="mdi-account-group"
             :items="allUserGroups.filter(g => g.is_assignable)"
             label="Static user's groups"
@@ -100,6 +106,8 @@ export default defineComponent({
         <v-select
             v-model="selected.member_of_dynamic_ids"
             :items="allUserGroups"
+            density="compact"
+            variant="outlined"
             prepend-icon="mdi-account-group"
             class="opacity-80"
             label="Dynamic user's groups (based on realm roles)"

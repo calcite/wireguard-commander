@@ -64,6 +64,8 @@ export default defineComponent({
         <v-text-field
             v-model="selected.name"
             label="Name"
+            density="compact"
+            variant="outlined"
             :rules="[v => !!v || 'Name is required']"
             :counter="$apiStore.getMaxLength('UserGroupUpdate', 'name')"
         >
@@ -75,6 +77,8 @@ export default defineComponent({
         <v-textarea
             v-model="selected.description"
             label="Description"
+            density="compact"
+            variant="outlined"
             row-height="15"
             rows="1"
             max-rows="10"
@@ -86,6 +90,8 @@ export default defineComponent({
             v-model="selected.realm_role"
             prepend-icon="mdi-cloud-key-outline"
             label="Keycloak Role"
+            density="compact"
+            variant="outlined"
             :counter="$apiStore.getMaxLength('UserGroupUpdate', 'realm_role')"
             v-if="!selected.is_default"
             :disabled="selected.is_admin"

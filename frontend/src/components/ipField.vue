@@ -5,7 +5,7 @@
     :hint="hint"
     :rules="ipAddressRules"
     :class="class"
-    prepend-icon="mdi-ip-outline"
+    :prepend-icon="prependIcon"
     persistent-hint
   >
     <template #append-inner>
@@ -33,6 +33,10 @@ export default {
     class: {
       type: String,
       default: ''
+    },
+    prependIcon: {
+      type: String,
+      default: 'mdi-ip-outline'
     }
   },
   data() {

@@ -103,6 +103,7 @@ export default defineComponent({
 
     <template #panel>
       <network-form :selected="selected"
+                    :fullsize="detailFullsize"
                     @canceled="cancelDone"
                     @updated="updateDone"
                     @created="createDone"
