@@ -84,10 +84,9 @@ export default defineComponent({
         const result = await this.$apiStore.submit('Interface', this.selected)
         this.notify = result.notification;
         if (this.notify?.status !== 'error') {
+          console.log(result)
           if (result?.created) {
-            Object.assign(this.selected, result.updated)
             this.$emit('created', result.created)
-
           } else {
             Object.assign(this.selected, result.updated)
             this.$emit('updated', result.updated)
@@ -165,7 +164,7 @@ export default defineComponent({
                 v-model="selected.server_name"
                 density="compact"
                 variant="outlined"
-                label="Server ID"
+                label="Server Name"
                 class="min-w-150"
                 :rules="[v => !!v || 'Server ID is required']"
                 default-value="default"
@@ -209,7 +208,7 @@ export default defineComponent({
 
         </block>
 
-        <block title="Network settings" icon="mdi-ip-network">
+        <block title="Server settings" icon="mdi-wrench-cog-outline">
           <v-col cols="auto" md="2">
             <v-text-field
                 v-model="selected.interface_name"
@@ -368,7 +367,7 @@ export default defineComponent({
         </block>
 
 
-        <block title="Client setup" icon="mdi-account-cog">
+        <block title="Client setup" icon="mdi-account-cog-outline">
           <v-col cols="auto" md="2">
             <v-text-field
                 v-model="selected.public_endpoint"

@@ -3,6 +3,7 @@ import {defineComponent} from "vue";
 import {AgGridVue} from "ag-grid-vue3"; // Vue Data Grid Component
 
 import ChipsRenderer from "@/components/ChipsRender.vue";
+import ButtonRender from "@/components/ButtonRender.vue";
 
 export default defineComponent({
   emits: ['ready', 'select'],
@@ -35,7 +36,8 @@ export default defineComponent({
         minWidth: 100
       },
       frameworkComponents: {
-        ChipsRenderer
+        ChipsRenderer,
+        ButtonRender
       },
     }
   },

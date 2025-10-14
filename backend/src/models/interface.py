@@ -137,7 +137,8 @@ class InterfaceDB(BaseDBModel):
     @classmethod
     async def pre_update(cls, db: Connection, interface: Interface, update: InterfaceUpdate, **kwargs):
         itemp = cls.convert_object(update, InterfaceTemplateUpdate, interface_id=interface.id)
-        await InterfaceTemplateDB.update(db, interface.id, itemp)
+        itemp_new = await InterfaceTemplateDB.update(db, interface.id, itemp)
+        cls.update_object(interface, itemp_new)
         return cls.convert_object(update, InterfaceSimpleUpdate)
 
     @classmethod

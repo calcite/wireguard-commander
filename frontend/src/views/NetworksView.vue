@@ -25,9 +25,17 @@ export default defineComponent({
         {headerName: 'Interface Name', field: 'interface_name', sortIndex: 1},
         {headerName: 'Address', field: 'address'},
         {
-          headerName: 'User groups',
-          field: 'user_groups',
-          cellRenderer: 'ChipsRenderer',
+          headerName: 'Actions',
+          field: 'id',
+          cellRenderer: 'ButtonRender',
+          cellRendererParams: {
+            // onClick: (params) => {
+            //   console.log('Clicked', params);
+            // },
+            items: [
+              {action: 'edit', icon: 'mdi-pencil', label: 'Edit', action: this.doEdit, color: 'indigo'},
+            ]
+          },
           sortable: false,
           filter: false,
         },
@@ -61,12 +69,8 @@ export default defineComponent({
       this.gridApi = params.api;
     },
     async doSelect(event) {
-      if (event.data?.id && this.selected?.id === event.data?.id) {
-        this.selected = null;
-      } else {
-        this.selected = event.data;
-        this.selectedEvent = event
-      }
+      event.data?.id
+      this.$router.push({name: 'Network Clients', params: {id: event.data.id}});
     },
     cancelDone(item) {
       this.selected = null;
@@ -89,6 +93,11 @@ export default defineComponent({
     deleteDone(item) {
       this.rowData = this.rowData.filter(row => row.id !== item.id);
       this.selected = null;
+    },
+    doEdit(id) {
+      console.log('Action', id);
+      this.selected = this.rowData.filter(row => row.id === id)[0];
+
     }
   }
 })

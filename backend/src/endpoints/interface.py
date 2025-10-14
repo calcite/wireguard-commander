@@ -49,7 +49,10 @@ async def update(interface_id: int,
                  _user: User = Security(get_me)):
     _user.test_permission('admin:all')
     async with pool.acquire_with_log(sql_logger) as db, db.transaction():
-        return await InterfaceDB.update(db, interface_id, update)
+        res =  await InterfaceDB.update(db, interface_id, update)
+        print('A'*80)
+        print(res)
+        return res
 
 
 @router.delete("/{interface_id}", status_code=status.HTTP_204_NO_CONTENT)

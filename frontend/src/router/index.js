@@ -7,6 +7,7 @@ import UserGroupsView from '../views/UserGroupsView.vue'
 import UsersView from '../views/UsersView.vue'
 import NotFound from '../views/NotFound.vue'
 import NetworksView from '../views/NetworksView.vue'
+import ClientView from '../views/ClientView.vue'
 
 
 const permsContain = (text) => (perms) => perms.some(it => it === 'admin:all' || it.includes(text))
@@ -33,6 +34,16 @@ const router = createRouter({
         permission: 'admin:all',
         icon: 'mdi-server-network',
         menu: true,
+      }
+    },
+     {
+      path: "/network/:id/clients",
+      name: "Network Clients",
+      component: ClientView,
+      meta: {
+        permission: 'admin:all',
+        icon: 'mdi-server-network',
+        menu: false,
       }
     },
     {

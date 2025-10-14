@@ -6,7 +6,12 @@ import Page from "@/components/page.vue";
 export default defineComponent({
   name: 'AuthenticatedView',
   components: {Page},
-  props: {},
+  props: {
+    navigationDrawerWidthPx: {
+      type: String,
+      default: ''
+    }
+  },
   data() {
     return {
       isDetailShown: false,

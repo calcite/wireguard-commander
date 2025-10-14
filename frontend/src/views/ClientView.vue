@@ -9,6 +9,10 @@ import UsergroupForm from './forms/usergroupForm.vue'
 export default defineComponent({
   components: {Page, Table, UsergroupForm},
   props: {
+    id: {
+      type: String,
+      default: ''
+    },
     navigationDrawerWidthPx: {
       type: String,
       default: ''

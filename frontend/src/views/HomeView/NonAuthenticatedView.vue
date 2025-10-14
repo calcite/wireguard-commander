@@ -6,7 +6,12 @@ import api from "@/services/api";
 export default defineComponent({
   name: 'NonAuthenticatedView',
   emits: ['notify'],
-  props: {},
+  props: {
+    navigationDrawerWidthPx: {
+      type: String,
+      default: ''
+    }
+  },
   methods: {
     login() {
       try{

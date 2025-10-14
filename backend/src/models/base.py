@@ -231,6 +231,12 @@ class BaseDBModel:
         return toClass(**params)
 
     @classmethod
+    def update_object(cls, obj: BaseModel, update: BaseModel):
+        for k, v in update.model_dump().items():
+            if k != 'id':
+                setattr(obj, k, v)
+
+    @classmethod
     async def create_or_update(cls, db: Connection, create: C, keys: List[str],
                                update: U, **kwargs):
         _cls = kwargs.get('_cls', cls)

@@ -8,7 +8,12 @@ import UserForm from './forms/userForm.vue'
 
 export default defineComponent({
   components: {Page, Table, UserForm},
-  props: {},
+  props: {
+    navigationDrawerWidthPx: {
+      type: String,
+      default: ''
+    }
+  },
   data() {
     return {
       selected: null,
